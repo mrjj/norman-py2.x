@@ -97,7 +97,7 @@ class DBConnector(object):
         return result
 
 
-    def return_dump(self):
+    def export_dump(self):
         """ Convert native structure to SQL or other format dump """
         return self.__export_native()
 
@@ -161,8 +161,8 @@ class DBConnector(object):
 class JsonDBConnector(DBConnector):
     """ database connector for json format """
 
-    def return_dump(self):
-        native_dump = super(JsonDBConnector, self).return_dump()
+    def export_dump(self):
+        native_dump = super(JsonDBConnector, self).export_dump()
         return simplejson.dumps(native_dump, sort_keys=True)
 
     def import_dump(self, dump):

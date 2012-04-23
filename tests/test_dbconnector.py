@@ -70,7 +70,7 @@ class TestDBConnector(object):
     def test_json_export(self):
         self.Persons(age=35, name="Sherlock Holmes", address=self.Addresses(street="Baker st.", town=self.Towns(name="London")))
         json_connector = JsonDBConnector(self.db)
-        dump = json_connector.return_dump()
+        dump = json_connector.export_dump()
         assert dump
 
 
