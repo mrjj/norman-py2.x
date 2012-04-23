@@ -1,0 +1,5 @@
+repo: 17aa4f001f6d2e47fb6297a66c62b747f8b3b823
+node: f5a89859982027ad7d76d722fbc75f7159a0f6dd
+branch: default
+latesttag: norman-0.5.1
+latesttagdistance: 10
