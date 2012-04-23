@@ -164,6 +164,7 @@ class Database(object):
             else:
                 for row in cursor:
                     row = dict(row)
+                    print row
                     if '_oid_' in row:
                         oid = row.pop('_oid_')
                         flat[oid] = (table, row)
@@ -187,10 +188,12 @@ class Database(object):
                     args[key] = self._makerecord(flat, row[key])
             else:
                 args[key] = row[key]
+
         record = None
         try:
             record = table(**args)
         except ValueError as err:
+            print "zzz"
             logging.warning(err)
         else:
             flat[oid] = (table, record)

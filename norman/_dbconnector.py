@@ -39,7 +39,7 @@ class DBConnector(object):
     def __init__(self, db, *args, **kwargs):
         self.db = db
 
-    def prepare_native(self):
+    def __export_native(self):
         """ Prepare db representation in pyhon dict-list structure
         {
             'tablename1': [
@@ -99,7 +99,7 @@ class DBConnector(object):
 
     def return_dump(self):
         """ Convert native structure to SQL or other format dump """
-        pass
+        return self.__export_native()
 
     def __import_record(self, records_list, uid):
         # if record was already inserted
@@ -130,7 +130,7 @@ class DBConnector(object):
         return inserted_record
 
 
-    def import_native(self, native):
+    def __import_native(self, native):
         """ Create DB enteties from native python dict-list structure """
         existing_tables = dict()
         for table in self.db:
@@ -153,48 +153,18 @@ class DBConnector(object):
             self.__import_record(records_list, uuid)
 
 
-
     def import_dump(self, dump):
         """ Read native structure from SQL or other format dump """
-        self.import_native(dump)
+        self.__import_native(dump)
 
-
-#def fromjson(self, jstring):
-#    """Deserializing json string"""
-#
-#    uuid_oid_bijection = {}
-#    def get_oid_for_uuid(uuid):
-#        if oid not in uuid.keys():
-#            uuid[uuid] = 1
-#        return uuid[oid]
-#
-#    data = simplejson.loads(jstring)
-#
-#    # Extract the sql to a temporary dict structure, keyed by oid
-#    flat = {}
-#    for table in self:
-#        tname = table.__name__
-#        query = u'SELECT * FROM "{}";'.format(tname)
-#        try:
-#        #                cursor = conn.execute(query)
-#            else:
-#            for row in cursor:
-#                row = dict(row)
-#                if u'_oid_' in row:
-#                    oid = row.pop(u'_oid_')
-#                    flat[oid] = (table, row)
-#
-#        Create correct types in flat
-#        for oid in flat.keys():
-#            self._makerecord(flat, oid)
 
 class JsonDBConnector(DBConnector):
+    """ database connector for json format """
 
     def return_dump(self):
-        super(JsonDBConnector, self).return_dump()
-        return simplejson.dumps(self.prepare_native(), sort_keys=True)
+        native_dump = super(JsonDBConnector, self).return_dump()
+        return simplejson.dumps(native_dump, sort_keys=True)
 
     def import_dump(self, dump):
-        return super(JsonDBConnector, self).import_dump(
-            simplejson.loads(dump)
-        )
+        loaded_dump = simplejson.loads(dump)
+        return super(JsonDBConnector, self).import_dump(loaded_dump)
