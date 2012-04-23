@@ -7,9 +7,9 @@ Description
 Lightweight, in-memory database framework implemented in python.
 
 :Version: 5.2a py 2.6+
-:Info: See `bitbucket<http://bitbucket.org/aquavitae/norman>`_  for initial p3k version for the latest source.
-:Documentation: See `readthedocs<norman.readthedocs.org>`_  for initial p3k version documentation.
-:Author: `David Townshend<http://readthedocs.org/profiles/aquavitae/>`_, port maded by `Ilya Kutukov<http://about.me/kutukov/>`_
+:Info: See `bitbucket<http://bitbucket.org/aquavitae/norman>`  for initial p3k version for the latest source.
+:Documentation: See `readthedocs<norman.readthedocs.org>`  for initial p3k version documentation.
+:Author: `David Townshend<http://readthedocs.org/profiles/aquavitae/>`, port maded by `Ilya Kutukov<http://about.me/kutukov/>`
 
 Dependencies
 -----------
