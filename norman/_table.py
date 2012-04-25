@@ -24,6 +24,13 @@ import copy
 import functools
 import weakref
 
+if hasattr(weakref, 'WeakSet'):
+        WeakSet = weakref.WeakSet
+else:
+		# Pyhon 2.6 weakref expernal library
+        import weakrefset
+        WeakSet = weakrefset.WeakSet
+
 from ._field import Field, NotSet
 
 class _I:
@@ -58,7 +65,7 @@ class TableMeta(type):
                 value.name = name
                 cls._fields[name] = value
                 if value.index:
-                    cls._indexes[name] = collections.defaultdict(weakref.WeakSet)
+                    cls._indexes[name] = collections.defaultdict(WeakSet)
         return cls
 
     # notice: db declaration with __database__ member instead metaclass param
