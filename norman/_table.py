@@ -143,7 +143,7 @@ class TableMeta(type):
         if records is None:
             records = cls.iter()
         if isinstance(records, Table):
-            records = {records}
+            records = set([records])
         kwmatch = cls.iter(**keywords)
         rec = set(records) & set(kwmatch)
         for r in rec:
@@ -201,7 +201,7 @@ class Table():
                     table = self.__class__
                     uniques = dict((f, getattr(self, f)) for f in table.fields()
                                    if getattr(table, f).unique)
-                    existing = set(self.__class__.iter(**uniques)) - {self}
+                    existing = set(self.__class__.iter(**uniques)) - set([self])
                     if existing:
                         raise ValueError("Not unique: {}={}".format(field.name,
                                                                 repr(value)))
