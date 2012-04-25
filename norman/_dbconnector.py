@@ -33,14 +33,71 @@ class DBConnector(object):
     """
     Basic class for DB export-import connector
     """
-    UUID_FIELD_LENGTH = 36
-    UUID_REGEXP = re.compile('^[\w]{8}-[\w]{4}-[\w]{4}-[\w]{4}-[\w]{12}$')
+    __UUID_FIELD_LENGTH = 36
+    __UUID_REGEXP = re.compile('^[\w]{8}-[\w]{4}-[\w]{4}-[\w]{4}-[\w]{12}$')
 
     def __init__(self, db, *args, **kwargs):
         self.db = db
 
+    def __import_record(self, records_list, record_uuid):
+        """
+        Import one record from native structure
+        """
+        # if record was already inserted
+        if isinstance(records_list[record_uuid], Table):
+            return records_list[record_uuid]
+
+        record = records_list[record_uuid]
+        table = record["_table_"]
+
+        keys = set(table.fields()) & set(record.keys())
+
+        args = {}
+        for key in keys:
+            if isinstance(record[key], int):
+                if record[key] == 0:
+                    args[key] = NotSet
+            else:
+                #check for UUID in value
+                if len(record[key]) == self.__UUID_FIELD_LENGTH\
+                  and self.__UUID_REGEXP.match(record[key])\
+                  and record[key] in records_list.keys():
+                    args[key] = self.__import_record(records_list, record[key])
+                else:
+                    args[key] = record[key]
+
+        # gen uuid field
+        if '_uuid_' in table.fields():
+            args['_uuid_'] = record_uuid
+
+        inserted_record = table(**args)
+        records_list[record_uuid] = inserted_record
+        return inserted_record
+
+    def __import_native(self, native):
+        """ Create DB enteties from native python dict-list structure """
+        existing_tables = dict()
+        for table in self.db:
+            existing_tables[table.__name__] = table
+
+        records_list = dict()
+        for (table_name, records) in native.items():
+            table = existing_tables.get(table_name.capitalize(), None)
+            if table is not None:
+                for record in records:
+                    if '_uuid_' in record.keys():
+                        record_uuid = record.pop('_uuid_')
+                    else:
+                        record_uuid = u(uuid.uuid4())
+                    record['_table_'] = table
+                    records_list[record_uuid] = record
+#        pprint(records_list)
+        for (record_uuid, record) in records_list.items():
+            self.__import_record(records_list, record_uuid)
+
     def __export_native(self):
-        """ Prepare db representation in pyhon dict-list structure
+        """
+        Prepare db representation in pyhon dict-list structure
         {
             'tablename1': [
                 {
@@ -61,15 +118,14 @@ class DBConnector(object):
         oid_uuid_bijection = {}
 
         # There is only plase this function is used so no separate method needed
-        def get_uuid_for_object(object_or_oid):
-            """ Recieve object and determine its id or just recieve id in int form """
-            if isinstance(object_or_oid, int):
-                oid = object_or_oid
-            else:
-                oid = id(object_or_oid)
-
+        def get_uuid_for_object(object):
+            """ Recieve object and determine its UUID or assign it"""
+            oid = id(object)
             if oid not in oid_uuid_bijection.keys():
-                oid_uuid_bijection[oid] = str(uuid.uuid4())
+                if "_uuid_" in object._fields and object._uuid_:
+                    oid_uuid_bijection[oid] = object._uuid_
+                else:
+                    oid_uuid_bijection[oid] = u(uuid.uuid4())
             return oid_uuid_bijection[oid]
 
         # Iterate over tables and records, converting them to dict-list structure
@@ -96,75 +152,24 @@ class DBConnector(object):
             result[table.__name__.lower()] = table_content
         return result
 
+    def import_dump(self, dump):
+        """ Read native structure from SQL or other format dump """
+        self.__import_native(dump)
 
     def export_dump(self):
         """ Convert native structure to SQL or other format dump """
         return self.__export_native()
 
-    def __import_record(self, records_list, uid):
-        # if record was already inserted
-        if isinstance(records_list[uid], Table):
-            return records_list[uid]
-
-        record = records_list[uid]
-        table = record["_table_"]
-
-        keys = set(table.fields()) & set(record.keys())
-
-        args = {}
-        for key in keys:
-            if isinstance(record[key], int):
-                if record[key] == 0:
-                    args[key] = NotSet
-            else:
-                #check for UUID in value
-                if len(record[key]) == self.UUID_FIELD_LENGTH\
-                   and self.UUID_REGEXP.match(record[key])\
-                and record[key] in records_list.keys():
-                    args[key] = self.__import_record(records_list, record[key])
-                else:
-                    args[key] = record[key]
-
-        inserted_record = table(**args)
-        records_list[uid] = inserted_record
-        return inserted_record
-
-
-    def __import_native(self, native):
-        """ Create DB enteties from native python dict-list structure """
-        existing_tables = dict()
-        for table in self.db:
-            existing_tables[table.__name__] = table
-
-        records_list = dict()
-
-        for (table_name, records) in native.items():
-            table = existing_tables.get(table_name.capitalize(), None)
-            if table is not None:
-                for record in records:
-                    if '_uuid_' in record.keys():
-                        uuid = record.pop('_uuid_')
-                        record['_table_'] = table
-                        records_list[uuid] = record
-                    else:
-                        logging.warning('no _uuid_ field')
-
-        for (uuid, record) in records_list.items():
-            self.__import_record(records_list, uuid)
-
-
-    def import_dump(self, dump):
-        """ Read native structure from SQL or other format dump """
-        self.__import_native(dump)
-
 
 class JsonDBConnector(DBConnector):
     """ database connector for json format """
 
-    def export_dump(self):
-        native_dump = super(JsonDBConnector, self).export_dump()
-        return simplejson.dumps(native_dump, sort_keys=True)
-
     def import_dump(self, dump):
         loaded_dump = simplejson.loads(dump)
         return super(JsonDBConnector, self).import_dump(loaded_dump)
+
+    def export_dump(self):
+        native_dump = super(JsonDBConnector, self).export_dump()
+#        pprint(native_dump)
+        return simplejson.dumps(native_dump, sort_keys=True, indent=4)
+
